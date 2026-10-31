@@ -1,0 +1,420 @@
+/* =========================================================
+   PERI — Pop-up Pendaftaran Program
+   Desain: Figma node 160:169 (formulir), 160:342 (sudah terdaftar),
+   160:418 (berhasil). Lebar kartu 520px.
+   ========================================================= */
+.dp-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  overflow-y: auto;
+  background: rgba(80, 15, 17, 0.6);
+}
+.dp-overlay[hidden] {
+  display: none;
+}
+body.dp-open {
+  overflow: hidden;
+}
+
+.dp-modal {
+  position: relative;
+  width: 520px;
+  max-width: 100%;
+  margin: auto;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #fff;
+  color: #500f11;
+  font-family: "Roboto", "Poppins", "Segoe UI", Arial, sans-serif;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
+}
+.dp-accent {
+  height: 6px;
+  background: #9d1e4a;
+}
+
+/* Kepala */
+.dp-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 28px 18px;
+}
+.dp-eyebrow {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #a5822a;
+}
+.dp-title {
+  margin: 0;
+  font-family: "Tinos", "Times New Roman", Georgia, serif;
+  font-size: 26px;
+  line-height: 1.15;
+  font-weight: 700;
+  color: #500f11;
+}
+.dp-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f6f2f3;
+  color: #500f11;
+  cursor: pointer;
+}
+.dp-close:hover {
+  background: #eadfe2;
+}
+.dp-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Isi */
+.dp-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 28px;
+}
+.dp-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dp-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #500f11;
+}
+.dp-label b {
+  margin-left: 3px;
+  color: #e0232e;
+  font-weight: 700;
+}
+.dp-input {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.dp-input input,
+.dp-input select {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #e6dee0;
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  color: #500f11;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.dp-input input::placeholder {
+  color: #a99a9c;
+}
+.dp-input input:focus,
+.dp-input select:focus {
+  border-color: #9d1e4a;
+  box-shadow: 0 0 0 3px rgba(157, 30, 74, 0.14);
+}
+.dp-input select {
+  -moz-appearance: none;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 40px;
+  cursor: pointer;
+}
+.dp-input .dp-ico {
+  position: absolute;
+  right: 14px;
+  width: 18px;
+  height: 18px;
+  color: #6b5658;
+  pointer-events: none;
+}
+.dp-input input[readonly] {
+  background: #f6f2f3;
+  padding-right: 40px;
+  cursor: default;
+}
+.dp-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #6b5658;
+}
+.dp-field.has-error .dp-input input,
+.dp-field.has-error .dp-input select {
+  border-color: #e0232e;
+  box-shadow: none;
+}
+.dp-error {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
+  color: #e0232e;
+}
+.dp-field.has-error .dp-error {
+  display: flex;
+}
+.dp-field.has-error .dp-hint {
+  display: none;
+}
+.dp-error svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+}
+
+/* Persetujuan */
+.dp-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #6b5658;
+  cursor: pointer;
+}
+.dp-consent input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.dp-box {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 1.5px solid #e6dee0;
+  border-radius: 6px;
+  background: #fff;
+  color: #fff;
+  transition: all 0.15s;
+}
+.dp-box svg {
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+}
+.dp-consent input:checked + .dp-box {
+  border-color: #9d1e4a;
+  background: #9d1e4a;
+}
+.dp-consent input:checked + .dp-box svg {
+  opacity: 1;
+}
+.dp-consent input:focus-visible + .dp-box {
+  box-shadow: 0 0 0 3px rgba(157, 30, 74, 0.2);
+}
+.dp-field.has-error .dp-box {
+  border-color: #e0232e;
+}
+
+/* Banner (peringatan & galat server) */
+.dp-alert {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.dp-alert[hidden] {
+  display: none;
+}
+.dp-alert svg {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+.dp-alert strong {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 14px;
+}
+.dp-alert.warn {
+  background: #fdf1dc;
+  color: #92500f;
+}
+.dp-alert.err {
+  background: #fde9ea;
+  color: #b3141f;
+}
+
+/* Kartu program terpilih (kondisi sudah terdaftar) */
+.dp-program {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #fbeff3;
+}
+.dp-program img {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: #ead7de;
+}
+.dp-badge {
+  display: inline-block;
+  margin-bottom: 4px;
+  padding: 3px 10px;
+  border-radius: 100px;
+  background: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9d1e4a;
+}
+.dp-program h3 {
+  margin: 0 0 4px;
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #500f11;
+}
+.dp-program p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #6b5658;
+}
+
+/* Berhasil */
+.dp-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+}
+.dp-success .dp-ok {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #e6f3eb;
+  color: #2e7d4f;
+}
+.dp-success .dp-ok svg {
+  width: 36px;
+  height: 36px;
+}
+.dp-success p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6b5658;
+}
+.dp-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px;
+  border-radius: 14px;
+  background: #fbeff3;
+  font-size: 13px;
+}
+.dp-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.dp-summary span {
+  color: #6b5658;
+}
+.dp-summary b {
+  font-weight: 500;
+  text-align: right;
+  word-break: break-word;
+}
+
+/* Tombol */
+.dp-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  padding: 22px 28px;
+}
+.dp-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: 1px solid transparent;
+  border-radius: 100px;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    opacity 0.15s;
+}
+.dp-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.dp-btn.primary {
+  background: #9d1e4a;
+  color: #fff;
+}
+.dp-btn.primary:hover {
+  background: #86183f;
+}
+.dp-btn.ghost {
+  border-color: #e6dee0;
+  background: #fff;
+  color: #500f11;
+}
+.dp-btn.ghost:hover {
+  background: #f6f2f3;
+}
+.dp-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 560px) {
+  .dp-head,
+  .dp-actions {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .dp-body {
+    padding: 0 20px;
+  }
+  .dp-actions {
+    flex-wrap: wrap;
+  }
+  .dp-actions .dp-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

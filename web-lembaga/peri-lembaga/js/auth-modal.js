@@ -174,6 +174,8 @@
     }
     close();
     renderNavbar(user);
+    // Memberi tahu skrip lain (mis. pop-up Daftar Program) bahwa login berhasil.
+    document.dispatchEvent(new CustomEvent("peri:login", { detail: user }));
   }
 
   // Ganti tombol Masuk/Daftar dengan Keluar saat sudah login.
