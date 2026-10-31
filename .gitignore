@@ -1,3 +1,5 @@
 .env
 secret.key
 __pycache__/
+profil_uji_dummy_50
+ground_truth_dummy
