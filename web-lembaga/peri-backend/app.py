@@ -12,6 +12,7 @@ Aturan peran:
   - Register lewat web lembaga -> role 'pendaftar' (otomatis, tidak bisa memilih).
   - Role 'admin' hanya bisa ditambahkan lewat database (buat_admin.py atau SQL).
   - Pendaftar hanya boleh memakai web lembaga; endpoint admin menolaknya (403).
+  - Pendaftaran program (POST /api/pendaftaran-program) wajib sudah masuk; satu akun satu kali per program.
 
 Pengaturan koneksi ada di file .env (salin dari .env.example).
 """
@@ -60,8 +61,10 @@ SANDI_MIN, SANDI_MAKS = 8, 30
 LOGIN_MAKS_GAGAL, LOGIN_KUNCI = 5, 5 * 60   # 5 kali gagal -> tunggu 5 menit
 KIRIM_MAKS_PER_IP, KIRIM_JENDELA = 10, 10 * 60
 UMPAN_MAKS_PER_IP, UMPAN_JENDELA = 5, 10 * 60   # 5 umpan balik per 10 menit per IP
+DAFTAR_MAKS_PER_USER, DAFTAR_JENDELA = 10, 10 * 60   # 10 percobaan daftar program per 10 menit per akun
 
 EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
+WA_RE = re.compile(r"^08\d{8,12}$")   # nomor WhatsApp Indonesia setelah dinormalkan
 ORIGIN_RE = re.compile(r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$")
 ORIGIN_TAMBAHAN = {o.strip() for o in os.environ.get("PERI_ORIGINS", "").split(",") if o.strip()}
 
@@ -141,7 +144,7 @@ def siapkan_database():
             # Pastikan tabelnya benar-benar ada, dan tampilkan di terminal.
             cur.execute("SHOW TABLES")
             ada = {str(list(b.values())[0]).lower() for b in cur.fetchall()}
-            hilang = {"users", "kode_verifikasi", "buku_tamu"} - ada
+            hilang = {"users", "kode_verifikasi", "buku_tamu", "pendaftaran_program"} - ada
             if hilang:
                 raise RuntimeError(
                     f"Tabel {', '.join(sorted(hilang))} gagal dibuat di database '{DB_NAME}'. "
@@ -187,6 +190,16 @@ def data_json() -> dict:
 def bersihkan_email(nilai) -> str:
     email = str(nilai or "").strip().lower()
     return email if len(email) <= 190 and EMAIL_RE.match(email) else ""
+
+
+def bersihkan_wa(nilai) -> str:
+    """Normalkan nomor WhatsApp ke format 08xxxxxxxxxx. String kosong bila tidak valid."""
+    nomor = re.sub(r"[\s\-().]", "", str(nilai or ""))
+    if nomor.startswith("+62"):
+        nomor = "0" + nomor[3:]
+    elif nomor.startswith("62"):
+        nomor = "0" + nomor[2:]
+    return nomor if WA_RE.match(nomor) else ""
 
 
 def user_publik(baris: dict) -> dict:
@@ -482,6 +495,62 @@ def kirim_umpan_balik():
             (nama, email, pesan, kategori, skor),
         )
     return jsonify({"ok": True}), 201
+
+
+@app.post("/api/pendaftaran-program")
+def daftar_program():
+    """Pendaftaran program dari pop-up 'Daftar Program' (harus sudah masuk).
+    Satu akun hanya boleh mendaftar satu kali pada program yang sama (409 bila ganda)."""
+    user = user_saat_ini()
+    if not user:
+        return galat("Silakan masuk terlebih dahulu untuk mendaftar program.", 401)
+
+    d = data_json()
+    program = str(d.get("program") or "").strip()
+    nama = str(d.get("nama") or "").strip()
+    email = bersihkan_email(d.get("email"))
+    wa = bersihkan_wa(d.get("wa"))
+
+    def tolak(pesan, kolom):
+        return jsonify({"error": pesan, "kolom": kolom}), 400
+
+    if not nama or len(nama) > 100:
+        return tolak("Nama lengkap wajib diisi (maksimal 100 karakter).", "nama")
+    if not email:
+        return tolak("Masukkan email yang valid.", "email")
+    if not wa:
+        return tolak("Nomor WhatsApp tidak valid. Gunakan angka, contoh 081234567890.", "wa")
+    if not program or len(program) > 150:
+        return tolak("Pilih program yang ingin diikuti.", "program")
+    if d.get("setuju") is not True:
+        return tolak("Centang persetujuan penggunaan data untuk melanjutkan.", "setuju")
+
+    kunci = ("daftar", user["id"])
+    if _sisa_tunggu(kunci, DAFTAR_MAKS_PER_USER, DAFTAR_JENDELA):
+        return galat("Terlalu banyak percobaan pendaftaran. Coba lagi beberapa menit lagi.", 429)
+    _catat(kunci)
+
+    with db().cursor() as cur:
+        cur.execute(
+            "SELECT nama, email, wa, program FROM pendaftaran_program WHERE user_id=%s AND program=%s",
+            (user["id"], program),
+        )
+        ada = cur.fetchone()
+        if ada:
+            return jsonify({"error": "Anda sudah terdaftar pada program ini.",
+                            "kode": "sudah_terdaftar", "data": ada}), 409
+        try:
+            cur.execute(
+                "INSERT INTO pendaftaran_program (user_id, program, nama, email, wa) "
+                "VALUES (%s,%s,%s,%s,%s)",
+                (user["id"], program, nama, email, wa),
+            )
+        except pymysql.err.IntegrityError:
+            # Dua permintaan bersamaan: kunci UNIQUE di database yang menjadi penentu.
+            return jsonify({"error": "Anda sudah terdaftar pada program ini.",
+                            "kode": "sudah_terdaftar",
+                            "data": {"nama": nama, "email": email, "wa": wa, "program": program}}), 409
+    return jsonify({"ok": True, "data": {"nama": nama, "email": email, "wa": wa, "program": program}}), 201
 
 
 @app.get("/api/buku-tamu")
